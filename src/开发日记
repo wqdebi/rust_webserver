@@ -1,0 +1,59 @@
+day 1：
+采用actix_web框架进行开发。
+async fn greet(req: HttpRequest)->impl  Responder{
+    let name = req.match_info().get("name").unwrap_or("World");
+    format!("Hello {}!", &name)
+}
+async fn add(req: HttpRequest)->impl  Responder{
+    let a = req.match_info().get("a").unwrap_or("0").parse::<i32>().unwrap_or(0);
+    let b = req.match_info().get("b").unwrap_or("0").parse::<i32>().unwrap_or(0);
+    format!("Hello {}!", a+b)
+}
+这两个函数为异步函数，用来真正处理http请求的函数，例如一个请求“127.0.0.1：8080/liming”，该函数拿出“liming”
+并返回，“127.0.0.1：8080/liming/1/2”，使用add函数进行处理，拿出“1”和“2”转化为i32并相加，返回。
+
+#[tokio::main] //过程宏，因为async函数只能在async函数中调用，使用该过程宏，可以将main转化为“async函数”（实际上没有，之所产生了文本替换，使得他看起来像async）
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(greet))
+            .route("/{name}", web::get().to(greet))
+            .route("/{name}/{a}/{b}", web::get().to(add))
+    }).bind("127.0.0.1:8080")?
+        .run()
+        .await
+}
+HttpServer Server服务器 app 业务处理的对象，.route采用责任链的方式，调用合适的函数进行处理。
+
+day2:
+fn spawn_app(){
+    let server = myweb::run().expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+}
+tokio::spawn是一个函数，用于在Tokio的运行时中启动一个新的异步任务。它接受一个实现了Future trait的参数，
+并返回一个JoinHandle，这个JoinHandle可以用来等待这个异步任务完成或者获取其结果（如果有的话）。
+
+#[tokio::test]
+async fn health_check_works() {
+    spawn_app();
+    let client = reqwest::Client::new();
+    let response = client
+        .get("http://127.0.0.1:8000/health_check")
+        .send()
+        .await
+        .expect("Failed to execute request");
+
+    assert!(response.status().is_success());
+    assert_eq!(Some(0), response.content_length());
+}
+产生一个服务器，并且用客户端去连接服务器，查看状态码，以及相应体是否为空
+
+//health_check.rs
+fn spawn_app()->String{
+    let listener = TcpListener::bind("127.0.0.1:0")//绑定一个随机端口
+        .expect("Failed to bind random port");
+    let port = listener.local_addr().unwrap().port(); //获取该端口号
+    let server = myweb::run(listener).expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    format!("http://127.0.0.1:{}", port)//返回地址
+}
