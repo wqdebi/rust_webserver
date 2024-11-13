@@ -25,6 +25,7 @@ async fn subscribe(_form: web::Form<FormData>)->HttpResponse {
     HttpResponse::Ok().finish()
 }
 
+
 pub fn run(linstener: TcpListener)->Result<Server, std::io::Error> {
     let server = HttpServer::new(|| {
         App::new()
