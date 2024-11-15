@@ -87,3 +87,6 @@ pub fn run(linstener: TcpListener)->Result<Server, std::io::Error> {
 to函数在执行subscribe之前，会构造_form: web::Form<FormData>，如果成功则调用该函数，
 如果失败则返回一个错误马400， 在构造_form的时候，会使用http请求去构造该对象，同时被web::Form<>
 包裹的对象需要实现序列化和反序列化，#[derive(serde::Deserialize)]则为其实现默认的序列化trait
+
+day4：
+添加了docker脚本，有问题。。。。。
